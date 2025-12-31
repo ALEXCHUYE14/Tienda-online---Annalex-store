@@ -27,7 +27,7 @@ body { background-color: var(--bg-color); color: var(--text-color); line-height:
 .container { max-width: 1200px; margin: 0 auto; padding: 50px 20px; }
 .section-header { text-align: center; margin-bottom: 40px; }
 .section-title { font-size: 2.5rem; margin-bottom: 10px; color: var(--dark); }
-.section-title.text-white { color: var(--white); }
+.section-title.text-white { color: var(--dark); }
 a { text-decoration: none; color: var(--gold); }
 a:hover { text-decoration: underline; }
 
@@ -71,6 +71,7 @@ a:hover { text-decoration: underline; }
 [data-theme="dark"] .product-card { background: #071827; box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
 [data-theme="dark"] footer { background: #02060a; }
 [data-theme="dark"] .top-bar { background: #0a1720; color: var(--gold); }
+[data-theme="dark"] .section-title.text-white { color: var(--white); }
 
 /* Ensure readable product titles and descriptions */
 [data-theme="dark"] .product-card h3,
@@ -410,13 +411,30 @@ footer { background: var(--dark); color: var(--white); padding: 50px 5%; font-si
 
 /* Checkout Modal Specifics */
 .checkout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 20px; }
-.payment-option { background: var(--white); padding: 25px; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-.payment-option h3 { color: var(--gold); margin-bottom: 15px; font-size: 1.4rem; }
+@media (min-width: 700px) {
+    .checkout-grid { grid-template-columns: 1fr 1fr; }
+}
+.payment-option { background: var(--white); padding: 20px; border-radius: 8px; text-align: left; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.payment-option h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.2rem; text-align: left; }
 .payment-option p { margin-bottom: 10px; color: var(--gray-text); }
-#cardPaymentForm input { display: block; width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
-.card-details { display: flex; gap: 10px; }
-.card-details input { flex: 1; }
-#cardPaymentForm button { width: 100%; margin-top: 15px; }
+.payment-option label { display:block; text-align:left; margin-top:10px; margin-bottom:6px; font-weight:600; }
+.payment-option input[type="text"], .payment-option input[type="tel"], .payment-option input[type="file"], .payment-option input[type="email"] { width:100%; box-sizing:border-box; padding:10px; border-radius:6px; border:1px solid #ddd; }
+#paymentPreview img { max-width: 120px; border-radius: 8px; border: 1px solid #eee; display:block; margin-top:8px; }
+.instruction-text { font-size: 0.95rem; color: #666; margin-bottom: 20px; }
+.order-details-box strong, .order-details-box #orderNumber { color: #111; }
+
+/* Product Modal specifics */
+.product-modal-grid { display:block; }
+@media (min-width:700px) {
+    .product-modal-grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:start; }
+}
+.product-details h2 { margin-top:0; }
+.product-media img { max-width:100%; height:auto; border-radius:8px; }
+.product-details { padding-left:6px; }
+#productModal .modal-content { max-width:860px; }
+.product-card img { transition: transform 0.18s ease; }
+.product-card img:hover { transform: scale(1.03); }
+.product-card img { cursor: pointer; }
 
 /* Search Modal Specifics */
 #searchInput { width: 100%; padding: 12px; font-size: 1.1rem; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px; }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Annalex | Tienda Online Premium - Moda, Tecnologia y Hogar en Perú</title>
+    <title>Annalex store</title>
     
     <meta name="description" content="En Annalex encuentra lo mejor en ropa para toda la familia, tecnología de punta y decoración para el hogar. Pagos seguros con Yape, Plin y Tarjeta. Envío rápido a todo Lima.">
     <meta name="keywords" content="Annalex, e-commerce Perú, comprar ropa online, tecnología, artículos hogar, pagar con Yape, plin, tarjeta">
@@ -54,7 +54,7 @@
     <section class="categories container">
         <div class="cat-grid">
             <a href="moda.html" class="cat-card" style="background-image: url('img/moda.jpg')"><span>Moda</span></a>
-            <a href="tecnologia.html" class="cat-card" style="background-image: url('img/tecnologia.jfif')"><span>Tecnologia</span></a>
+            <a href="tecnologia.html" class="cat-card" style="background-image: url('img/')"><span>Tecnologia</span></a>
             <a href="hogar.html" class="cat-card" style="background-image: url('img/hogar.jfif')"><span>Hogar</span></a>
             <a href="accesorios.html" class="cat-card" style="background-image: url('img/accesorio.jfif')"><span>Accesorios</span></a>
         </div>
@@ -219,8 +219,9 @@
                         <label for="paymentProof">Adjuntar comprobante (opcional)</label>
                         <input id="paymentProof" name="paymentProof" type="file" accept="image/*">
                         <div id="paymentPreview" style="margin-top:8px;"></div>
+                        <button type="button" class="btn-wsp-success" onclick="sendPaymentProof()" style="margin-top:8px;">Enviar comprobante ahora</button>
 
-                        <p class="instruction-text">Al enviar el formulario, se abrirá WhatsApp con un mensaje prellenado. Adjunta la imagen del comprobante manualmente en la conversación.</p>
+                        <p class="instruction-text">Si tu navegador lo permite, el comprobante se adjuntará automáticamente al compartir; si no, podrás adjuntarlo manualmente en WhatsApp.</p> 
                     </div>
                     <div class="payment-option">
                         <h3>Resumen del pedido</h3>
@@ -262,6 +263,33 @@
     </div>
 
     <a href="https://wa.me/+51924996961" class="wsp-float" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
+
+    <!-- Product Details Modal -->
+    <div id="productModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="productTitle">
+            <button class="close" onclick="closeProductModal()" aria-label="Cerrar">×</button>
+            <div class="product-modal-grid">
+                <div class="product-media">
+                    <img id="modalProductImage" src="" alt="Producto" style="width:100%;border-radius:8px;">
+                    <div style="text-align:center;margin-top:10px;"><img src="img/QR - YAPE.jpeg" alt="QR" style="width:120px;height:120px;border-radius:8px;display:inline-block;"></div>
+                    <p style="font-size:0.9rem;color:#666;margin-top:8px;text-align:center;">Pago por Yape / Plin</p>
+                </div>
+                <div class="product-details">
+                    <h2 id="modalProductTitle">Producto</h2>
+                    <p id="modalProductPrice" style="font-weight:700;margin:8px 0;color:var(--gold);">S/ 0.00</p>
+                    <p id="modalProductDesc" style="color:var(--muted-color);">Descripción del producto.</p>
+                    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+                        <label for="modalQty" style="font-weight:600;">Cantidad</label>
+                        <input id="modalQty" type="number" min="1" value="1" style="width:80px;padding:6px;border-radius:6px;border:1px solid #ddd;">
+                    </div>
+                    <div style="margin-top:18px;display:flex;gap:8px;">
+                        <button class="btn-gold" onclick="addProductToCartFromModal()">Agregar al carrito</button>
+                        <button class="btn-wsp-success" onclick="sendProductWsp()"><i class="fab fa-whatsapp"></i> Enviar por WhatsApp</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -250,6 +250,8 @@ function openCheckout() {
     if (cart.length === 0) return alert("Tu carrito está vacío.");
     const modal = document.getElementById('checkoutModal');
     if (!modal) return;
+    // Actualizar resumen antes de abrir
+    if (typeof updateCheckoutSummary === 'function') updateCheckoutSummary();
     modal.style.display = 'block';
     modal.setAttribute('aria-hidden','false');
     const focusable = modal.querySelector('input, button, textarea');
@@ -271,7 +273,7 @@ function bindCheckoutForm() {
 
     // Summary injection
     const summaryEl = document.getElementById('checkoutSummary');
-    function updateSummary() {
+    function updateCheckoutSummary() {
         if (!summaryEl) return;
         if (!cart.length) {
             summaryEl.innerHTML = '<p>Tu carrito está vacío.</p>';
@@ -280,7 +282,8 @@ function bindCheckoutForm() {
         summaryEl.innerHTML = cart.map(i => `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>${i.name} x${i.qty}</span><strong>S/ ${(i.price * i.qty).toFixed(2)}</strong></div>`).join('') + `<hr><div style="display:flex;justify-content:space-between;"><strong>Total</strong><strong>S/ ${cart.reduce((s,a)=>s+a.price*a.qty,0).toFixed(2)}</strong></div>`;
     }
 
-    updateSummary();
+    // Inicializar resumen
+    updateCheckoutSummary();
 
     // File preview
     const paymentProof = document.getElementById('paymentProof');
@@ -295,7 +298,7 @@ function bindCheckoutForm() {
         };
     }
 
-    checkoutForm.addEventListener('submit', function(e) {
+    checkoutForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const name = (document.getElementById('custName').value || '').trim();
         const phone = (document.getElementById('custPhone').value || '').trim();
@@ -310,7 +313,10 @@ function bindCheckoutForm() {
 
         const total = cart.reduce((s,a)=>s+a.price*a.qty,0).toFixed(2);
 
+        const orderId = '#' + (Math.floor(Math.random()*900000)+1000);
+
         let message = `*NUEVO PEDIDO ANNALEX*%0A`;
+        message += `*Orden:* ${orderId}%0A`;
         message += `*Cliente:* ${name}%0A`;
         message += `*Celular:* ${phone}%0A`;
         message += `*Dirección:* ${address}%0A`;
@@ -321,15 +327,33 @@ function bindCheckoutForm() {
         });
         message += `--------------------------%0A`;
         message += `*TOTAL A PAGAR:* S/ ${total}%0A%0A`;
-        message += `Adjunto la captura del pago (si aplica). Por favor adjunta la imagen en la conversación de WhatsApp y escribe el número de orden si lo tienes.`;
+        message += `Adjunto la captura del pago (si aplica).`;
 
-        const whatsappUrl = `https://wa.me/51924996961?text=${message}`;
-        // Store last order for success modal
-        lastOrder = { id: '#' + (Math.floor(Math.random()*900000)+1000), name, phone, total };
-        // Open WhatsApp
-        window.open(whatsappUrl, '_blank');
+        const file = paymentProof && paymentProof.files && paymentProof.files[0] ? paymentProof.files[0] : null;
 
-        // Show success modal
+        // Guardar orden para el modal y enviar comprobante luego si hace falta
+        lastOrder = { id: orderId, name, phone, total, proofFile: file };
+
+        // Intentar usar Web Share API para compartir archivo + texto (mejor experiencia en móvil)
+        try {
+            if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], text: decodeURIComponent(message.replace(/%0A/g,'\n')) });
+                // Comparte y finaliza
+            } else if (navigator.share) {
+                // Fallback: compartir solo texto
+                await navigator.share({ text: decodeURIComponent(message.replace(/%0A/g,'\n')) });
+            } else {
+                // Fallback final: abrir WhatsApp con mensaje (sin archivo)
+                const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(message.replace(/%0A/g,'\n'))}`;
+                window.open(whatsappUrl, '_blank');
+            }
+        } catch (err) {
+            // Si el share falla, abrir WhatsApp como fallback
+            const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(message.replace(/%0A/g,'\n'))}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Mostrar modal de éxito
         closeCheckout();
         const success = document.getElementById('successModal');
         if (success) {
@@ -339,7 +363,7 @@ function bindCheckoutForm() {
             success.setAttribute('aria-hidden','false');
         }
 
-        // Keep cart as-is so user confirms externally; optionally clear it
+        // Vaciar carrito local y actualizar
         cart = [];
         updateCart();
     });
@@ -423,12 +447,116 @@ function finalOrder() {
     success.setAttribute('aria-hidden','false');
 }
 
-function sendOrderWsp() {
+async function sendOrderWsp() {
     const orderEl = document.getElementById('orderNumber');
     const orderId = orderEl ? orderEl.innerText : '';
-    const whatsappUrl = `https://wa.me/51924996961?text=Adjunto%20mi%20comprobante%20de%20pago%20Orden%20${orderId}`;
+    const file = lastOrder && lastOrder.proofFile ? lastOrder.proofFile : null;
+    const textMessage = `Adjunto mi comprobante de pago Orden ${orderId}`;
+
+    try {
+        if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], text: textMessage });
+            return;
+        } else if (file && navigator.share) {
+            await navigator.share({ text: textMessage });
+            return;
+        } else {
+            const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(textMessage)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+    } catch (err) {
+        const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(textMessage)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+}
+
+// Enviar el comprobante actualmente seleccionado en el formulario (si existe)
+async function sendPaymentProof() {
+    const input = document.getElementById('paymentProof');
+    const file = input && input.files && input.files[0] ? input.files[0] : (lastOrder && lastOrder.proofFile ? lastOrder.proofFile : null);
+    if (!file) { showToast('Selecciona primero la imagen del comprobante', 'error'); return; }
+
+    const orderEl = document.getElementById('orderNumber');
+    const orderId = orderEl ? orderEl.innerText : (lastOrder ? lastOrder.id : '');
+    const textMessage = orderId ? `Adjunto mi comprobante de pago Orden ${orderId}` : 'Adjunto mi comprobante de pago';
+
+    try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], text: textMessage });
+            showToast('Compartido correctamente', 'success');
+            return;
+        } else if (navigator.share) {
+            await navigator.share({ text: textMessage });
+            showToast('Compartido correctamente', 'success');
+            return;
+        } else {
+            // No es posible adjuntar archivo por URL, abrir WhatsApp con texto e indicar que adjunten la imagen manualmente
+            const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(textMessage + ' (Adjunta la imagen manualmente en la conversación)')}`;
+            window.open(whatsappUrl, '_blank');
+        }
+    } catch (err) {
+        const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(textMessage + ' (Adjunta la imagen manualmente en la conversación)')}`;
+        window.open(whatsappUrl, '_blank');
+    }
+} 
+
+/* ---------- PRODUCT MODAL FUNCTIONS ---------- */
+function openProductModal(id) {
+    const modal = document.getElementById('productModal');
+    if (!modal) return;
+    const prod = products.find(p => String(p.id) === String(id));
+    if (!prod) { showToast('Producto no encontrado', 'error'); return; }
+
+    // Llenar datos
+    modal.querySelector('#modalProductImage').src = prod.img || '';
+    modal.querySelector('#modalProductTitle').innerText = prod.name || '';
+    modal.querySelector('#modalProductPrice').innerText = `S/ ${Number(prod.price || 0).toFixed(2)}`;
+    modal.querySelector('#modalProductDesc').innerText = prod.desc || '';
+    modal.dataset.productId = prod.id;
+    modal.querySelector('#modalQty').value = 1;
+
+    // Mostrar modal
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden','false');
+}
+
+function closeProductModal() {
+    const modal = document.getElementById('productModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden','true');
+}
+
+function addProductToCartFromModal() {
+    const modal = document.getElementById('productModal');
+    if (!modal) return;
+    const id = modal.dataset.productId;
+    const qty = parseInt(document.getElementById('modalQty').value, 10) || 1;
+    let prod = products.find(p => String(p.id) === String(id));
+    if (!prod) { showToast('Producto no encontrado', 'error'); return; }
+
+    const existing = cart.find(item => String(item.id) === String(prod.id));
+    if (existing) existing.qty += qty; else cart.push({...prod, qty});
+
+    updateCart();
+    showToast('Producto agregado al carrito', 'success');
+    closeProductModal();
+}
+
+function sendProductWsp() {
+    const modal = document.getElementById('productModal');
+    if (!modal) return;
+    const id = modal.dataset.productId;
+    const qty = parseInt(document.getElementById('modalQty').value, 10) || 1;
+    const prod = products.find(p => String(p.id) === String(id));
+    if (!prod) { showToast('Producto no encontrado', 'error'); return; }
+
+    const message = `*INTERÉS EN PRODUCTO*\n*Producto:* ${prod.name}\n*Cantidad:* ${qty}\n*Precio unitario:* S/ ${Number(prod.price).toFixed(2)}\n*Total estimado:* S/ ${(prod.price*qty).toFixed(2)}\n\nPor favor contáctenme para coordinar el pago por Yape o Plin.`;
+    const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }
+
+/* ---------- END PRODUCT MODAL FUNCTIONS ---------- */ 
 
 // Toast helper
 function showToast(msg, type = 'success', duration = 2800) {
@@ -474,13 +602,13 @@ function renderCategoryGrid(categoryName, elementId) {
 
     grid.innerHTML = displayItems.map((p, idx) => `
         <div class="product-card" data-id="${p.id}" data-price="${p.price}">
-            <img src="${p.img}" alt="${p.name}" loading="lazy" decoding="async">
+            <img src="${p.img}" alt="${p.name}" loading="lazy" decoding="async" onclick="openProductModal('${p.id}')" style="cursor:pointer;">
             <div class="info">
-                <h3>${p.name}</h3>
+                <h3 onclick="openProductModal('${p.id}')" style="cursor:pointer;">${p.name}</h3>
                 <p class="product-desc">${p.desc || ''}</p>
                 <div class="price">S/ ${Number(p.price).toFixed(2)}</div>
             </div>
-            <button class="btn-gold" onclick="addToCart(${p.id})">Agregar</button>
+            <button class="btn-gold" onclick="addToCart('${p.id}')">Agregar</button>
         </div>
     `).join('');
 }
