@@ -411,6 +411,9 @@ footer { background: var(--dark); color: var(--white); padding: 50px 5%; font-si
 
 /* Checkout Modal Specifics */
 .checkout-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 20px; }
+.btn-gold.loading { opacity: 0.9; pointer-events: none; position: relative; }
+.btn-gold.loading::after { content: ''; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.9); border-top-color: transparent; border-radius: 50%; animation: spin 0.9s linear infinite; }
+
 @media (min-width: 700px) {
     .checkout-grid { grid-template-columns: 1fr 1fr; }
 }

@@ -250,6 +250,15 @@ function openCheckout() {
     if (cart.length === 0) return alert("Tu carrito está vacío.");
     const modal = document.getElementById('checkoutModal');
     if (!modal) return;
+    // Generar número de orden si no existe y mostrarlo
+    if (!lastOrder || !lastOrder.id) {
+        const newId = '#' + (Math.floor(Math.random()*900000)+1000);
+        if (!lastOrder) lastOrder = {};
+        lastOrder.id = newId;
+    }
+    const orderEl = document.getElementById('checkoutOrderNumber');
+    if (orderEl) orderEl.innerText = lastOrder.id || '—';
+
     // Actualizar resumen antes de abrir
     if (typeof updateCheckoutSummary === 'function') updateCheckoutSummary();
     modal.style.display = 'block';
@@ -311,9 +320,15 @@ function bindCheckoutForm() {
         if (!address) { showToast('Por favor ingresa la dirección de envío', 'error'); document.getElementById('custAddress').focus(); return; }
         if (!cart.length) { showToast('Tu carrito está vacío', 'error'); return; }
 
+        // Deshabilitar el botón para evitar envíos duplicados y mostrar spinner
+        const submitBtn = checkoutForm.querySelector('button[type="submit"]');
+        const originalBtnHtml = submitBtn ? submitBtn.innerHTML : null;
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('loading'); }
+
         const total = cart.reduce((s,a)=>s+a.price*a.qty,0).toFixed(2);
 
-        const orderId = '#' + (Math.floor(Math.random()*900000)+1000);
+        // Usar el número de orden generado al abrir el checkout si existe
+        const orderId = (lastOrder && lastOrder.id) ? lastOrder.id : ('#' + (Math.floor(Math.random()*900000)+1000));
 
         let message = `*NUEVO PEDIDO ANNALEX*%0A`;
         message += `*Orden:* ${orderId}%0A`;
@@ -331,8 +346,8 @@ function bindCheckoutForm() {
 
         const file = paymentProof && paymentProof.files && paymentProof.files[0] ? paymentProof.files[0] : null;
 
-        // Guardar orden para el modal y enviar comprobante luego si hace falta
-        lastOrder = { id: orderId, name, phone, total, proofFile: file };
+        // Guardar orden para el modal y enviar comprobante luego si hace falta (incluye items)
+        lastOrder = Object.assign({}, lastOrder || {}, { id: orderId, name, phone, total, proofFile: file, items: cart.map(i=>({ id:i.id, name:i.name, qty:i.qty, price:i.price })) });
 
         // Intentar usar Web Share API para compartir archivo + texto (mejor experiencia en móvil)
         try {
@@ -351,6 +366,9 @@ function bindCheckoutForm() {
             // Si el share falla, abrir WhatsApp como fallback
             const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(message.replace(/%0A/g,'\n'))}`;
             window.open(whatsappUrl, '_blank');
+        } finally {
+            // Rehabilitar el botón y quitar spinner
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('loading'); }
         }
 
         // Mostrar modal de éxito
@@ -476,26 +494,52 @@ async function sendPaymentProof() {
     const file = input && input.files && input.files[0] ? input.files[0] : (lastOrder && lastOrder.proofFile ? lastOrder.proofFile : null);
     if (!file) { showToast('Selecciona primero la imagen del comprobante', 'error'); return; }
 
+    // Recolectar datos del formulario (si están presentes)
+    const name = (document.getElementById('custName') || {}).value || ''; 
+    const phone = (document.getElementById('custPhone') || {}).value || '';
+    const address = (document.getElementById('custAddress') || {}).value || '';
+
+    // Construir resumen de productos desde el carrito
+    let productsText = '';
+    let total = 0;
+    if (cart && cart.length) {
+        cart.forEach(item => { productsText += `- ${item.name} x${item.qty} (S/ ${(item.price*item.qty).toFixed(2)})\n`; total += item.price*item.qty; });
+    } else if (lastOrder && lastOrder.items) {
+        lastOrder.items.forEach(item => { productsText += `- ${item.name} x${item.qty} (S/ ${(item.price*item.qty).toFixed(2)})\n`; total += item.price*item.qty; });
+    }
+
     const orderEl = document.getElementById('orderNumber');
     const orderId = orderEl ? orderEl.innerText : (lastOrder ? lastOrder.id : '');
-    const textMessage = orderId ? `Adjunto mi comprobante de pago Orden ${orderId}` : 'Adjunto mi comprobante de pago';
+
+    let message = `*NUEVO PEDIDO ANNALEX*\n`;
+    if (orderId) message += `*Orden:* ${orderId}\n`;
+    if (name) message += `*Cliente:* ${name}\n`;
+    if (phone) message += `*Celular:* ${phone}\n`;
+    if (address) message += `*Dirección:* ${address}\n`;
+    if (productsText) { message += `--------------------------\n*Productos:*\n${productsText}--------------------------\n`; }
+    if (total) message += `*TOTAL A PAGAR:* S/ ${total.toFixed(2)}\n\n`;
+    message += `Adjunto la captura del pago.`;
+
+    // Guardar archivo en lastOrder para que el modal de éxito pueda usarlo
+    if (!lastOrder) lastOrder = {};
+    lastOrder.proofFile = file;
 
     try {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], text: textMessage });
+            await navigator.share({ files: [file], text: message });
             showToast('Compartido correctamente', 'success');
             return;
         } else if (navigator.share) {
-            await navigator.share({ text: textMessage });
+            await navigator.share({ text: message });
             showToast('Compartido correctamente', 'success');
             return;
         } else {
-            // No es posible adjuntar archivo por URL, abrir WhatsApp con texto e indicar que adjunten la imagen manualmente
-            const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(textMessage + ' (Adjunta la imagen manualmente en la conversación)')}`;
+            // Fallback a WhatsApp con el mensaje y una nota para adjuntar la imagen manualmente
+            const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(message + ' (Adjunta la imagen manualmente en la conversación)')}`;
             window.open(whatsappUrl, '_blank');
         }
     } catch (err) {
-        const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(textMessage + ' (Adjunta la imagen manualmente en la conversación)')}`;
+        const whatsappUrl = `https://wa.me/51924996961?text=${encodeURIComponent(message + ' (Adjunta la imagen manualmente en la conversación)')}`;
         window.open(whatsappUrl, '_blank');
     }
 } 
