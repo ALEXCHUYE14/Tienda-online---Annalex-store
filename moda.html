@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annalex | Tienda Online Premium - Moda, Tecnologia y Hogar en Perú</title>
+    
+    <meta name="description" content="En Annalex encuentra lo mejor en ropa para toda la familia, tecnología de punta y decoración para el hogar. Pagos seguros con Yape, Plin y Tarjeta. Envío rápido a todo Lima.">
+    <meta name="keywords" content="Annalex, e-commerce Perú, comprar ropa online, tecnología, artículos hogar, pagar con Yape, plin, tarjeta">
+    <meta name="author" content="Annalex Store">      
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="top-bar">🔥 Ofertas de temporada: Hasta 40% OFF + Envío Gratis sobre S/ 199</div>
+    <nav class="navbar" role="navigation" aria-label="Main Navigation">
+        <div class="logo">ANNALEX</div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html" data-nav="home">Inicio</a></li>
+            <li><a href="moda.html" data-nav="moda" aria-current="page">Moda</a></li>
+            <li><a href="tecnologia.html" data-nav="tecnologia">Tecnologia</a></li>
+            <li><a href="hogar.html" data-nav="hogar">Hogar</a></li>
+            <li><a href="accesorios.html" data-nav="accesorios">Accesorios</a></li>
+        </ul>
+        <div class="nav-icons">
+            <button class="icon-btn" aria-label="Buscar" id="searchBtn"><i class="fas fa-search" aria-hidden="true"></i></button>
+            <button class="icon-btn cart-icon" aria-label="Ver carrito" id="cartBtn" aria-expanded="false"><i class="fas fa-shopping-bag" aria-hidden="true"></i><span id="cart-count">0</span></button>
+            <!-- Dark theme toggle -->
+            <button class="icon-btn" id="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><i class="fas fa-moon" aria-hidden="true"></i></button>
+            <button class="icon-btn" id="menuBtn" aria-label="Abrir menú"><i class="fas fa-bars" aria-hidden="true"></i></button>
+        </div>
+    </nav>
+
+    <main role="main">
+    <section class="container">
+        <h1 class="section-title">Colección de Moda</h1>
+        <div class="product-grid" id="modaGrid"></div>
+    </section>
+    </main>
+
+    <section class="testimonios" id="testimonios">
+        <div class="container">
+            <h2 class="section-title text-white">Lo que dicen nuestros clientes</h2>
+            <div class="testimonial-grid">
+                <div class="t-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"La calidad de los productos es excelente y el envío rápido."</p>
+                    <strong>- Ana P.</strong>
+                </div>
+                <div class="t-card">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"Excelente atención y facilidad para pagar con Yape."</p>
+                    <strong>- Luis R.</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <div class="logo">ANNALEX</div>
+                <p>Moda y tecnología con propósito. Envíos garantizados y pagos protegidos.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="#">Privacidad</a>
+                <a href="#">Términos de Servicio</a>
+                <a href="#">Libro de Reclamaciones</a>
+            </div>
+            <div class="footer-social">
+                <h4>Síguenos</h4>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">© 2026 Annalex Store Perú - Todos los derechos reservados.</div>
+    </footer>
+
+    <div id="cartSidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Tu Carrito</h3>
+            <button class="icon-btn" onclick="toggleCart()" aria-label="Cerrar carrito"><i class="fas fa-times" aria-hidden="true"></i></button>
+        </div>
+        <div id="cartItems"></div>
+        <div class="cart-total-box">
+            <h4>Total: S/ <span id="cartTotal">0.00</span></h4>
+            <div class="cart-actions" style="display:flex; gap:8px; margin-top:8px;">
+                <button class="btn-gold" onclick="openCheckout()">Ir a Pagar</button>
+                <button class="btn-white" onclick="clearCart()">Vaciar Carrito</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="site-footer"></div>
+
+    <!-- Modals (Search & Checkout) -->
+    <div id="searchModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+            <button class="close" onclick="closeSearch()" aria-label="Cerrar búsqueda">×</button>
+            <h2 id="searchTitle">Buscar en Annalex</h2>
+            <input type="text" id="searchInput" aria-label="Buscar productos" placeholder="Escribe tu búsqueda..." onkeyup="filterProducts()">
+            <div id="searchResults" class="product-grid" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+            <button class="close" onclick="closeCheckout()" aria-label="Cerrar checkout">×</button>
+            <h2 id="checkoutTitle">Completa tu pedido</h2>
+            <form id="checkoutForm">
+                <div class="checkout-grid">
+                    <div class="payment-option">
+                        <h3>Pago con Yape / Plin (QR)</h3>
+                        <p>Escanea el QR o realiza la transferencia a nuestra cuenta.</p>
+                        <img src="img/QR - YAPE.jpeg" alt="QR Code Yape Plin" style="width: 150px; height: 150px; margin: 10px auto; display: block;">
+                        <p><strong>A nombre de: Annalex S.A.C.</strong></p>
+                        <label for="custName">Nombre completo</label>
+                        <input id="custName" name="custName" type="text" placeholder="Tu nombre" required>
+
+                        <label for="custPhone">Celular (con código)</label>
+                        <input id="custPhone" name="custPhone" type="tel" placeholder="+51 9XXXXXXXX" required>
+
+                        <label for="custAddress">Dirección</label>
+                        <input id="custAddress" name="custAddress" type="text" placeholder="Dirección de envío" required>
+
+                        <label for="paymentProof">Adjuntar comprobante (opcional)</label>
+                        <input id="paymentProof" name="paymentProof" type="file" accept="image/*">
+                        <div id="paymentPreview" style="margin-top:8px;"></div>
+
+                        <p class="instruction-text">Al enviar el formulario, se abrirá WhatsApp con un mensaje prellenado. Adjunta la imagen del comprobante manualmente en la conversación.</p>
+                    </div>
+                    <div class="payment-option">
+                        <h3>Resumen del pedido</h3>
+                        <div id="checkoutSummary"></div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top: 18px;">
+                    <button type="submit" class="btn-gold">Enviar pedido por WhatsApp</button>
+                    <button type="button" class="btn-white" onclick="closeCheckout()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" aria-hidden="true">
+        <div class="modal-content success-content" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+            <div class="success-icon">
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+            </div>
+            <h2 id="successTitle">¡Pedido Recibido con Éxito!</h2>
+            <p>Gracias por confiar en <strong>Annalex</strong>. Tu orden ha sido generada correctamente.</p>
+            <div class="order-details-box">
+                <p><strong>Número de Orden:</strong> <span id="orderNumber">#0000</span></p>
+                <p><strong>Estado:</strong> Esperando validación de pago</p>
+            </div>
+            <p class="instruction-text">Para agilizar tu envío, presiona el botón de abajo para enviarnos tu comprobante por WhatsApp.</p>
+            <div class="success-btns">
+                <button class="btn-wsp-success" onclick="sendOrderWsp()"><i class="fab fa-whatsapp" aria-hidden="true"></i> Enviar Comprobante</button>
+                <button class="btn-white" onclick="location.reload()">Finalizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Loader -->
+    <div id="paymentLoader" class="loader-overlay" style="display: none;">
+        <div class="loader"></div>
+        <p>Procesando tu pedido...</p>
+    </div>
+
+    <a href="https://wa.me/+51924996961" class="wsp-float" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
+    <script src="script.js"></script>
+</body>
+</html>
